@@ -7,6 +7,10 @@
 
 ## 플레이
 
+**온라인: <https://geonhee15.github.io/Find-People/>** · 스프라이트 갤러리: <https://geonhee15.github.io/Find-People/sprites.html>
+
+로컬 실행:
+
 ```bash
 python3 -m http.server 5173
 ```

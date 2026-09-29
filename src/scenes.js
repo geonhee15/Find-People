@@ -80,6 +80,39 @@ function roof(x, cx, y, w, h, col, dark) {
   px(x, cx - w / 2 - 2, y + h - 3, dark); px(x, cx + w / 2 + 1, y + h - 3, dark);
 }
 
+// 3x5 픽셀 글자
+const GLYPH = { T: ['111', '010', '010', '010', '010'], R: ['110', '101', '110', '101', '101'], U: ['101', '101', '101', '101', '111'], M: ['101', '111', '111', '101', '101'], P: ['110', '101', '110', '100', '100'] };
+function pixelText(x, str, px0, py0, col) {
+  let cx = px0;
+  for (const ch of str) { const g = GLYPH[ch]; if (g) g.forEach((row, j) => [...row].forEach((b, i) => { if (b === '1') px(x, cx + i, py0 + j, col); })); cx += 4; }
+}
+function trumpTower(x, r) {
+  const tx = 200, tw = 56;
+  for (let y = 16; y < 150; y++) {
+    const inset = y < 50 ? 12 : y < 80 ? 6 : 0;
+    const saw = (y % 6 < 3) ? 1 : 0;
+    rect(x, tx + inset + saw, y, tw - inset * 2 - saw * 2, 1, y % 4 === 0 ? '#2e3440' : '#1e2228');
+    px(x, tx + inset + saw + 2, y, '#4a5868');
+  }
+  for (let y = 18; y < 150; y += 4) for (let X = tx + 4; X < tx + tw - 4; X += 5) if (r() < 0.25) px(x, X, y, '#f8e8a0');
+  for (let k = 0; k < 3; k++) { rect(x, tx - 10 + k * 3, 118 + k * 10, 8, 3, '#4a8a3a'); rect(x, tx + tw + 2 - k * 3, 118 + k * 10, 8, 3, '#4a8a3a'); }
+  rect(x, tx + 4, 136, tw - 8, 9, '#141418');
+  rect(x, tx + 4, 136, tw - 8, 1, '#c8a040'); rect(x, tx + 4, 144, tw - 8, 1, '#c8a040');
+  pixelText(x, 'TRUMP', tx + 18, 138, '#f8d868');
+}
+function palm(x, px0, by, h = 36) {
+  let cx = px0;
+  for (let i = 0; i < h; i++) { rect(x, Math.round(cx), by - i, 2, 1, i % 3 ? '#8a6a3a' : '#6a4a2a'); cx += Math.sin(i / h * 1.4) * 0.35; }
+  const tx = Math.round(cx), ty = by - h;
+  for (const [dx, dy] of [[-10, 4], [10, 4], [-7, -3], [7, -3], [-12, 8], [12, 8], [0, -5]]) line(x, tx, ty, tx + dx, ty + dy, '#3a8a3a');
+  for (const [dx, dy] of [[-9, 5], [9, 5], [-6, -2], [6, -2]]) line(x, tx, ty + 1, tx + dx, ty + dy + 1, '#2a6a2a');
+}
+function cart(x, cx, by) {
+  rect(x, cx, by - 6, 14, 5, '#f4f4f4'); rect(x, cx + 1, by - 11, 12, 1, '#e8e8e8');
+  rect(x, cx + 2, by - 10, 1, 4, '#8a8a8a'); rect(x, cx + 11, by - 10, 1, 4, '#8a8a8a');
+  rect(x, cx + 2, by - 1, 3, 1, '#101010'); rect(x, cx + 9, by - 1, 3, 1, '#101010');
+}
+
 // ───────── 씬별 페인터 ─────────
 const P = {};
 
@@ -121,6 +154,8 @@ const CITY = {
   shanghai: { sky: ['#a0b8d0', '#c0d0e0', '#e0e8f0'], far: '#a8b8c8', walls: ['#7a8898', '#5a6878', '#9aa8b8', '#b0b8c0'], lit: '#e8f4ff', road: '#3a3a40', side: '#b0aaa0', mark: 'pearl', cars: ['#2a2a2a', '#e8e8e8', '#8a2a2a'] },
   hanoi: { sky: ['#88b8e0', '#b0d0ec', '#e4f0f8'], far: '#b8c8c0', walls: ['#e8c860', '#d8a050', '#88b890', '#e8d8b0', '#c87858'], lit: '#fff0b0', road: '#4a4844', side: '#b8a888', low: true, cars: ['#c83a3a', '#2a2a2a', '#3a6ab0'] },
   nk: { sky: ['#7ab0e0', '#a8cce8', '#d8e8f4'], far: '#b8c8d8', walls: ['#9ad1c9', '#f2c6a0', '#c7d3ef', '#e8e0c8', '#b8d8a8'], lit: '#fff8d0', road: '#4a4a50', side: '#bcb6aa', sparse: true, cars: ['#2a2a2a', '#e8e8e8'] },
+  trumptower: { sky: ['#6aa0d8', '#98c0e8', '#d0e4f4'], far: '#98a8c0', walls: ['#8a7a6a', '#6a6a78', '#a09080', '#5a5a64', '#b8a890'], lit: '#fff0b0', road: '#303036', side: '#a8a8a0', mark: 'trumptower', cars: ['#f0c020', '#2a2a2a', '#f0c020', '#141418'] },
+  old: { sky: ['#8ab0d0', '#b0c8dc', '#dce4ec'], far: '#a8b0b8', walls: ['#8a7a68', '#6e6458', '#9a8a76', '#7a6e62', '#a89a88'], lit: '#e8d8a0', road: '#5a544c', side: '#9a9284', low: true, cars: ['#2a2a2a', '#3a3630', '#2a3028'] },
   generic: { sky: ['#78b0e0', '#a8cce8', '#dcecf6'], far: '#a8b8c8', walls: ['#a89888', '#8a8a98', '#c0b0a0', '#788898', '#d0c8b8'], lit: '#fff0b0', road: '#3a3a40', side: '#b4aca0', mark: 'obelisk', cars: ['#c83a3a', '#2a2a2a', '#e8e8e8', '#3a6ab0'] },
 };
 P.city = (x, r, style = 'generic') => {
@@ -146,6 +181,7 @@ P.city = (x, r, style = 'generic') => {
     if (c.billboard && r() < 0.8) { const bc = pick(r, ['#e83a3a', '#3a8ae8', '#f0c020', '#e84ac0', '#3ac870']); const by = 150 - h + 6; rect(x, X + 2, by, w - 5, 16, bc); rect(x, X + 5, by + 5, w - 12, 2, '#ffffff'); rect(x, X + 5, by + 9, w - 18, 2, '#ffffff'); }
     X += w + (c.sparse ? 6 : 0);
   }
+  if (style === 'trumptower') trumpTower(x, r);
   if (style === 'nk') { rect(x, 180, 100, 120, 14, '#c8302a'); for (let k = 186; k < 294; k += 9) rect(x, k, 104, 6, 6, '#f5d03a'); }
   // 도로
   rect(x, 0, 150, W, 26, c.road);
@@ -209,6 +245,20 @@ P.mountain = (x, r, style = 'green') => {
     for (let L = 0; L < 3; L++) ridge(x, 40 + L, 110 + L * 18, 40 - L * 8, ['#c87a4a', '#b8643a', '#a85a30'][L], 0.008, { light: '#e8a070' });
     noiseGround(x, r, 166, H, ['#d89a68', '#c88a58', '#b87a48']);
     return { walk: [10, 172, 470, 262] };
+  }
+  if (style === 'alps') {
+    vgrad(x, 0, 0, W, 140, ['#5a90d0', '#8ab8e4', '#d0e6f6']);
+    clouds(x, r, 3, 10, 40);
+    ridge(x, 131, 112, 72, '#8a9ab0', 0.012, { snow: 0.35, bottom: 150 });
+    ridge(x, 132, 146, 38, '#5a7a5a', 0.018, { snow: 0.9, light: '#6a8a64' });
+    rect(x, 280, 112, 120, 38, '#d8d0c0'); rect(x, 280, 96, 120, 16, '#7a5a3a');
+    for (let i = 0; i < 8; i++) rect(x, 272 + i, 88 + i, 136 - i * 2, 1, i % 2 ? '#4a3a2a' : '#3a2e22');
+    rect(x, 300, 116, 60, 24, '#3a4a5a'); for (let X = 300; X < 360; X += 10) rect(x, X, 116, 1, 24, '#6a5a4a');
+    for (let X = 286; X < 396; X += 14) rect(x, X, 100, 6, 8, '#3a4a5a');
+    rect(x, 270, 148, 140, 3, '#8a7a6a');
+    for (let k = 0; k < 18; k++) pine(x, r() * W, 150 + r() * 8, 3 + Math.floor(r() * 2), '#2a5a3a');
+    noiseGround(x, r, 152, H, ['#7a9a5a', '#6a8a4a', '#9a9a8a']);
+    return { walk: [10, 162, 470, 262] };
   }
   if (style === 'lake') {
     vgrad(x, 0, 0, W, 110, ['#5a8ed0', '#8ab4e0', '#c8e0f4']);
@@ -478,6 +528,108 @@ const LM = {
     return { walk: [10, 170, 470, 262], anim: (ctx, t) => { for (let i = 0; i < 18; i++) rect(ctx, (i * 61 + t * 6) % W, 114 + ((i * 11) % 44), 5, 1, 'rgba(220,240,255,0.6)'); } };
   },
   generic: (x, r) => P.city(x, r, 'generic'),
+};
+
+P.golf = (x, r, style = 'nj') => {
+  const scot = style === 'scotland';
+  vgrad(x, 0, 0, W, 122, scot ? ['#7a9ac0', '#a8bcd4', '#d8e0e8'] : ['#6aa6e0', '#9cc8ec', '#dcecf8']);
+  clouds(x, r, 5, 10, 55, scot ? '#eef0f4' : '#ffffff');
+  if (scot) {
+    vgrad(x, 0, 96, W, 28, ['#3a6a98', '#4a7aa8']);
+    rect(x, 404, 50, 12, 64, '#f4f4f0'); rect(x, 404, 50, 12, 6, '#c83a2a'); rect(x, 402, 44, 16, 6, '#3a3a40'); rect(x, 406, 45, 8, 4, '#f8e070'); rect(x, 413, 56, 3, 58, '#d8d8d4');
+    ellipse(x, 410, 116, 26, 6, '#6a6a60');
+    ridge(x, 111, 124, 12, '#6a8a58', 0.02, { bottom: 130 });
+  } else {
+    for (let k = 0; k < 16; k++) roundTree(x, k * 32 + r() * 10, 122, 9 + Math.floor(r() * 4), pick(r, ['#2e6a36', '#3a7a3e', '#2a5a30']));
+    rect(x, 30, 88, 110, 32, '#f4f0e8'); for (let X = 36; X < 136; X += 10) rect(x, X, 96, 5, 8, '#4a5a68');
+    roof(x, 85, 76, 124, 12, '#3a3a44', '#22222a');
+  }
+  for (let y = 122; y < H; y++) rect(x, 0, y, W, 1, Math.floor((y - 122) / 10) % 2 ? '#5aa84a' : '#4e9a40');
+  for (let X = 0; X < W; X++) if (bayer(X, 122) < 0.5) px(x, X, 122 + (X % 3), '#3a7a32');
+  ellipse(x, 320, 172, 62, 16, '#7ac85a');
+  rect(x, 330, 136, 1, 34, '#f4f4f4'); rect(x, 331, 136, 9, 5, '#e0302a'); rect(x, 329, 170, 3, 1, '#1a1a1a');
+  ellipse(x, 150, 214, 36, 10, '#e8d8a0'); ellipse(x, 150, 213, 30, 7, '#f0e4b0');
+  cart(x, 50, 196); cart(x, 70, 200); cart(x, 420, 236);
+  return { walk: [10, 130, 470, 262] };
+};
+
+P.resort = (x, r) => {
+  vgrad(x, 0, 0, W, 104, ['#48a0e8', '#88c4f0', '#d0ecf8']);
+  clouds(x, r, 4, 8, 40);
+  vgrad(x, 0, 96, W, 24, ['#3ab0c8', '#5ac8d8']);
+  const cream = '#f2e2c8', tile = '#c8583a', tileD = '#9a3e28';
+  rect(x, 110, 72, 260, 58, cream); rect(x, 368, 72, 2, 58, '#d8c6a8');
+  for (let X = 120; X < 360; X += 18) { ellipse(x, X + 4, 92, 4, 4, '#3a4a5a'); rect(x, X, 92, 9, 12, '#3a4a5a'); }
+  for (let X = 120; X < 360; X += 18) rect(x, X, 112, 9, 12, '#3a4a5a');
+  for (let i = 0; i < 8; i++) rect(x, 104 + i, 64 + i, 272 - i * 2, 1, i % 2 ? tile : tileD);
+  rect(x, 226, 26, 48, 46, cream); for (let X = 232; X < 270; X += 12) { rect(x, X, 40, 6, 10, '#3a4a5a'); }
+  for (let i = 0; i < 16; i++) rect(x, 250 - i * 2 - 2, 10 + i, i * 4 + 4, 1, i % 2 ? tile : tileD);
+  flag(x, 249, -4, 'red');
+  for (const [px0, h] of [[40, 50], [70, 40], [410, 52], [440, 44], [92, 34], [388, 36]]) palm(x, px0, 132, h);
+  for (let y = 130; y < H; y++) rect(x, 0, y, W, 1, Math.floor((y - 130) / 8) % 2 ? '#6ab84a' : '#5eac40');
+  for (let y = 130; y < H; y++) { const w = 30 + (y - 130) * 0.5; rect(x, 240 - w / 2, y, w, 1, '#eadcc0'); }
+  rect(x, 56, 196, 96, 36, '#f4f4f0'); rect(x, 60, 200, 88, 28, '#48c8e0');
+  for (let i = 0; i < 8; i++) rect(x, 66 + i * 10, 206 + (i % 2) * 8, 6, 1, '#a8ecf8');
+  for (const cx of [330, 360, 390]) { rect(x, cx, 214, 20, 3, '#f4f4f4'); rect(x, cx + 16, 208, 3, 6, '#f4f4f4'); }
+  return { walk: [10, 138, 470, 262], anim: (ctx, t) => { for (let i = 0; i < 12; i++) rect(ctx, (i * 43 + t * 6) % W, 100 + ((i * 7) % 16), 4, 1, 'rgba(255,255,255,0.6)'); } };
+};
+
+P.ruins = (x, r, style = 'bunker') => {
+  vgrad(x, 0, 0, W, 150, ['#6e665e', '#8e8478', '#b8aa96']);
+  const glows = [], smokes = [];
+  let X = -4;
+  while (X < W) {
+    const w = 22 + Math.floor(r() * 30), h = 40 + r() * 70, wall = pick(r, ['#7a7068', '#5e5850', '#8a7e72']);
+    for (let i = 0; i < w; i++) { const hh = Math.max(12, h - (r() < 0.35 ? r() * 26 : 0) - (i > w * 0.6 ? (i - w * 0.6) * 1.2 : 0)); rect(x, X + i, 150 - hh, 1, hh, i > w - 3 ? shade(wall, 0.8) : wall); }
+    for (let k = 0; k < 6; k++) { const wx = X + 3 + r() * (w - 8), wy = 150 - h * (0.3 + r() * 0.5); const fire = r() < 0.18; rect(x, wx, wy, 3, 4, fire ? '#e8783a' : '#2a2622'); if (fire) glows.push([wx, wy]); }
+    if (r() < 0.3) smokes.push(X + w / 2);
+    X += w + 2;
+  }
+  if (style === 'gate') {
+    rect(x, 140, 134, 200, 16, '#b8ae9a'); rect(x, 140, 134, 200, 2, '#d0c6b0');
+    for (let k = 0; k < 6; k++) { const cx = 150 + k * 36; rect(x, cx, 82, 10, 52, '#cfc4ae'); rect(x, cx + 7, 82, 3, 52, '#a89e88'); }
+    rect(x, 142, 66, 196, 16, '#c6bca6'); for (let X2 = 146; X2 < 336; X2 += 8) rect(x, X2, 72, 4, 4, '#a89e88');
+    rect(x, 190, 52, 100, 14, '#bcb29c'); rect(x, 222, 38, 36, 14, '#3a3a34'); rect(x, 214, 44, 52, 8, '#2e2e28');
+    rect(x, 300, 66, 18, 10, '#6e665e'); rect(x, 164, 90, 6, 12, '#2a2622');
+  } else {
+    rect(x, 180, 104, 120, 46, '#9a9890'); for (let y = 110; y < 150; y += 8) rect(x, 180, y, 120, 1, '#8a8880');
+    rect(x, 180, 104, 120, 3, '#b0aea6'); rect(x, 226, 122, 28, 28, '#26241f'); rect(x, 230, 126, 20, 24, '#141412');
+    for (let k = 0; k < 14; k++) ellipse(x, 176 + k * 10, 147, 5, 3, k % 2 ? '#a89870' : '#98885f');
+    rect(x, 120, 120, 12, 30, '#6a6258'); rect(x, 116, 116, 20, 5, '#4a4640');
+  }
+  noiseGround(x, r, 150, H, ['#8a8274', '#7a7266', '#5a544c']);
+  for (let k = 0; k < 30; k++) ellipse(x, r() * W, 158 + r() * 104, 2 + r() * 5, 1 + r() * 2, pick(r, ['#6a645a', '#9a9284', '#4a463e']));
+  if (smokes.length < 2) smokes.push(90, 380);
+  return {
+    walk: [10, 158, 470, 262],
+    anim: (ctx, t) => {
+      for (const sx of smokes) for (let i = 0; i < 6; i++) { const f = (t * 0.12 + i / 6) % 1; ellipse(ctx, sx + f * 30, 70 - f * 60, 4 + f * 10, 3 + f * 5, `rgba(60,56,52,${0.6 - f * 0.5})`); }
+      for (const [gx, gy] of glows) { ctx.fillStyle = Math.sin(t * 9 + gx) > 0 ? '#f0a040' : '#c8502a'; ctx.fillRect(Math.round(gx), Math.round(gy), 3, 4); }
+    },
+  };
+};
+
+P.harbor = (x, r, style = 'uboat') => {
+  vgrad(x, 0, 0, W, 112, ['#8a98a8', '#aab4c0', '#ccd2d8']);
+  clouds(x, r, 4, 10, 50, '#dde0e4');
+  ridge(x, 121, 110, 16, '#7a8a7a', 0.015, { bottom: 112 });
+  vgrad(x, 0, 110, W, 60, ['#3a5a78', '#4a6a88']);
+  if (style === 'uboat') {
+    for (let X = 130; X < 390; X++) { const t = (X - 130) / 260; const h = Math.round(7 * Math.sin(t * Math.PI) ** 0.5); rect(x, X, 146 - h, 1, h * 2, X % 2 ? '#4a5058' : '#454b53'); px(x, X, 146 - h, '#6a7078'); }
+    rect(x, 246, 124, 30, 18, '#4a5058'); rect(x, 246, 124, 30, 2, '#6a7078'); rect(x, 262, 110, 2, 14, '#3a3e44'); rect(x, 268, 114, 1, 10, '#3a3e44');
+    rect(x, 180, 140, 14, 2, '#3a3e44');
+  } else {
+    rect(x, 110, 124, 290, 34, '#2e2e32'); rect(x, 110, 150, 290, 8, '#8a2a24'); rect(x, 110, 124, 290, 2, '#4a4a50');
+    rect(x, 320, 96, 50, 28, '#e8e8e4'); for (let X = 324; X < 366; X += 8) rect(x, X, 104, 5, 4, '#3a4a5a');
+    rect(x, 334, 78, 12, 18, '#1a1a1a'); rect(x, 334, 82, 12, 4, '#c83a2a');
+  }
+  for (let y = 40; y < 172; y++) { px(x, 46, y, '#8a6a3a'); px(x, 60, y, '#8a6a3a'); if (y % 8 === 0) line(x, 46, y, 60, y + 8, '#8a6a3a'); }
+  line(x, 53, 40, 110, 52, '#8a6a3a'); line(x, 105, 52, 105, 90, '#2a2a2a');
+  rect(x, 0, 160, W, 12, '#6a5238'); for (let X = 0; X < W; X += 6) rect(x, X, 160, 1, 12, '#4a3a28');
+  building(x, r, 404, 172, 76, 58, '#8a4a3a', { win: '#3a2a22', litP: 0.05, roof: '#5a3a2a' });
+  rect(x, 0, 172, W, H - 172, '#8a8680'); for (let y = 180; y < H; y += 14) rect(x, 0, y, W, 1, '#7a766f');
+  for (let k = 0; k < 6; k++) { const cx = 20 + r() * 380, cy = 200 + r() * 50; rect(x, cx, cy - 10, 12, 10, '#8a6a3a'); rect(x, cx, cy - 10, 12, 1, '#a88a5a'); line(x, cx, cy - 10, cx + 11, cy - 1, '#6a4a2a'); }
+  return { walk: [10, 178, 470, 262], anim: (ctx, t) => { for (let i = 0; i < 16; i++) rect(ctx, (i * 57 + t * 5) % W, 116 + ((i * 11) % 40), 5, 1, 'rgba(200,220,240,0.45)'); } };
 };
 
 // 씬 생성 (캐시)

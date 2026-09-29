@@ -9,6 +9,7 @@
     h2 { color: #ffd24a; margin: 20px 0 8px; }
     .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
     canvas { image-rendering: pixelated; background: #1b2233; border: 2px solid #2e3a6a; }
+    canvas.sepia { filter: sepia(0.65) contrast(1.05) saturate(0.85); }
     figure { margin: 0; text-align: center; font-size: 11px; color: #8e9ac0; }
   </style>
 </head>
@@ -22,33 +23,39 @@
   <h2>장소 배경</h2><div class="row" id="scenes"></div>
   <script type="module">
     import { initArt, ICON } from './src/art.js';
-    import { bust, genLook, targetLook, doubleLook, buildSprites } from './src/people.js';
+    import { bust, genLook, doubleLook, prisonLook, buildSprites } from './src/people.js';
     import { buildScene } from './src/scenes.js';
-    import { COUNTRY_POIS } from './src/data.js';
+    import { COUNTRY_POIS, COUNTRY_POIS_1945 } from './src/data.js';
+    import { TARGETS } from './src/targets.js';
     import { mulberry32 } from './src/util.js';
     initArt();
-    const put = (id, src, scale, label) => {
+    const put = (id, src, scale, label, cls = '') => {
       const c = document.createElement('canvas');
       c.width = src.width * scale; c.height = src.height * scale;
       const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(src, 0, 0, c.width, c.height);
+      if (cls) c.className = cls;
       const f = document.createElement('figure'); f.appendChild(c);
       if (label) { const l = document.createElement('figcaption'); l.textContent = label; f.appendChild(l); }
       document.getElementById(id).appendChild(f);
     };
-    put('target', bust(targetLook(), '#3a1a1a'), 6, '김정은 (대상)');
     const r = mulberry32(42);
-    for (let i = 0; i < 4; i++) put('target', bust(doubleLook(r), '#2a2a1a'), 6, '대역 #' + (i + 1));
-    const groups = ['ko', 'nk', 'zh', 'ja', 'ru', 'en', 'fr', 'es', 'ar', 'in', 'af'];
+    for (const T of Object.values(TARGETS)) {
+      put('target', bust(T.look(), '#3a1a1a'), 5, T.name);
+      for (let i = 0; i < 2; i++) put('target', bust(doubleLook(r, T.look()), '#2a2a1a'), 5, T.name + ' 대역');
+      put('target', bust(prisonLook(T.look()), '#2a2a30'), 5, T.name + ' (수감)');
+    }
+    const groups = ['ko', 'nk', 'zh', 'ja', 'ru', 'en', 'fr', 'es', 'ar', 'in', 'af', 'de'];
     const roles = ['civ', 'civ', 'civ', 'tourist', 'guard', 'soldier', 'official', 'worker', 'skier'];
     for (let i = 0; i < 36; i++) {
       const g = groups[i % groups.length], role = roles[i % roles.length];
-      const L = genLook(r, { group: g, role, nk: g === 'nk' });
-      put('busts', bust(L), 3, `${g} · ${role}`);
-      const s = buildSprites(L);
-      for (const f of [0, 1]) { const [c, x] = [document.createElement('canvas'), null]; c.width = 9; c.height = 18; const cx = c.getContext('2d'); cx.drawImage(s.body[f], 0, 0); cx.drawImage(s.head, 0, 0); put('low', c, 5); }
+      const era = i >= 24 ? 1945 : 2026;
+      const L = genLook(r, { group: g, role, nk: g === 'nk', era });
+      put('busts', bust(L), 3, `${g} · ${role}${era === 1945 ? ' · 1945' : ''}`);
+      const sp = buildSprites(L);
+      for (const f of [0, 1]) { const c = document.createElement('canvas'); c.width = 9; c.height = 18; const cx = c.getContext('2d'); cx.drawImage(sp.body[f], 0, 0); cx.drawImage(sp.head, 0, 0); put('low', c, 5); }
     }
     for (const [k, v] of Object.entries(ICON)) put('icons', v, 4, k);
-    for (const list of Object.values(COUNTRY_POIS)) for (const p of list) put('scenes', buildScene(p).bg, 1, p.name);
+    for (const [lists, era] of [[COUNTRY_POIS, 2026], [COUNTRY_POIS_1945, 1945]]) for (const list of Object.values(lists)) for (const p of list) put('scenes', buildScene(p).bg, 1, p.name + (era === 1945 ? ' (1945)' : ''), era === 1945 ? 'sepia' : '');
     for (const kind of ['village', 'beach', 'mountain']) put('scenes', buildScene({ id: 'demo_' + kind, scene: { kind, style: kind === 'mountain' ? 'green' : 'generic' } }).bg, 1, 'generic ' + kind);
   </script>
 </body>

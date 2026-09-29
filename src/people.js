@@ -7,6 +7,7 @@ export const SKIN = [
   ['#d9a16f', '#bf8455', '#8c5a37'],
   ['#a9724b', '#8b5936', '#5e3a22'],
   ['#6f4a31', '#583923', '#35220f'],
+  ['#f0b481', '#d9985f', '#a4683c'],
 ];
 const HAIRC = { black: '#1c1c24', dark: '#3a2a20', brown: '#6b4a2e', blond: '#d8b45c', red: '#9c4a24', gray: '#9b9b9f', white: '#e0e0e0' };
 const EYE = '#1a1420';
@@ -97,9 +98,9 @@ function makeName(r, g, female) {
 }
 
 export const GAME_YEAR = 2026;
-function birthInfo(r, age) {
+function birthInfo(r, age, year = GAME_YEAR) {
   const m = 1 + Math.floor(r() * 12), d = 1 + Math.floor(r() * 28);
-  const y = GAME_YEAR - age - (m >= 10 ? 1 : 0);
+  const y = year - age - (m >= 10 ? 1 : 0);
   return `${y}년 ${m}월 ${d}일`;
 }
 
@@ -116,7 +117,9 @@ const DULL = ['#2b3445', '#555a60', '#5a4636', '#1f2228', '#3d4a3a', '#6a6258', 
 const PANTS = ['#2d3e5e', '#3b5a8a', '#2a2a2e', '#5a5046', '#6b6b70', '#8a7a5a'];
 const HANBOK = ['#f2a2b8', '#9cc8ec', '#f1efe6', '#f0d36a', '#c9a0e0', '#f5c0a0'];
 
-export function genLook(r, { group = 'en', role = 'civ', nk = false, female, age } = {}) {
+const OLD = ['#4a4036', '#3a3a3e', '#5a4a3a', '#2e3440', '#4e4a44', '#6a5a48', '#3e4638'];
+export function genLook(r, { group = 'en', role = 'civ', nk = false, female, age, era = 2026, style = null } = {}) {
+  if (era === 1945 && role === 'tourist') role = 'civ';
   if (female === undefined) female = role === 'civ' || role === 'tourist' ? chance(r, 0.5) : role === 'official' ? chance(r, 0.08) : chance(r, 0.12);
   if (age === undefined) age = role === 'official' ? 50 + Math.floor(r() * 28) : role === 'guard' || role === 'soldier' ? 20 + Math.floor(r() * 22) : 17 + Math.floor(r() * 62);
   const w = (GROUP[group] || GROUP.en).skin;
@@ -157,7 +160,7 @@ export function genLook(r, { group = 'en', role = 'civ', nk = false, female, age
     L.pin = chance(r, 0.85); L.hairCol = age > 60 && chance(r, 0.5) ? HAIRC.gray : HAIRC.black;
   }
   if (role === 'tourist') { L.top = 'tshirt'; L.topCol = pick(r, BRIGHT); L.backpack = true; L.camera = chance(r, 0.6); if (chance(r, 0.4)) { L.hat = 'cap'; L.hatCol = pick(r, BRIGHT); } }
-  if (role === 'guard') {
+  if (role === 'guard' && era !== 1945) {
     Object.assign(L, { female: false, top: 'suit', topCol: '#17171d', bottomCol: '#17171d', shoeCol: '#0c0c0e', glasses: 'sun', earpiece: true, hair: pick(r, ['short', 'buzz', 'side']), stocky: chance(r, 0.6), tie: '#1a1a22', beard: null, skirt: false });
     L.hairCol = HAIRC.black; L.pin = nk;
   }
@@ -167,7 +170,7 @@ export function genLook(r, { group = 'en', role = 'civ', nk = false, female, age
   }
   if (role === 'official') {
     L.female = false; L.hair = pick(r, ['short', 'side', 'receding']); L.beard = null; L.skirt = false;
-    if (chance(r, 0.55)) { Object.assign(L, { top: 'uniform', topCol: nk ? OLIVE : '#4a5a3a', bottomCol: nk ? OLIVE : '#4a5a3a', hat: 'milcap', hatCol: nk ? OLIVE : '#4a5a3a', medals: true }); }
+    if (style !== 'suit' && chance(r, 0.55)) { Object.assign(L, { top: 'uniform', topCol: nk ? OLIVE : '#4a5a3a', bottomCol: nk ? OLIVE : '#4a5a3a', hat: 'milcap', hatCol: nk ? OLIVE : '#4a5a3a', medals: true }); }
     else { L.top = pick(r, ['mao', 'suit']); L.topCol = pick(r, ['#26282e', '#3a3d45', '#2b3445']); L.bottomCol = L.topCol; }
     L.notebook = chance(r, 0.7); L.pin = nk; L.stocky = chance(r, 0.5); L.shoeCol = '#0e0e10';
   }
@@ -176,39 +179,50 @@ export function genLook(r, { group = 'en', role = 'civ', nk = false, female, age
   if (role === 'civ' && !nk && group === 'ru' && chance(r, 0.15)) { L.hat = 'ushanka'; L.hatCol = '#6a4a30'; }
   if (role === 'civ' && !nk && chance(r, 0.06)) { L.hat = 'cap'; L.hatCol = pick(r, BRIGHT); }
   if (L.top === 'shirt' && chance(r, 0.4)) L.topCol = pick(r, ['#f2f2f2', '#cfe0f0', '#f0e0c0']);
+  if (era === 1945) era1945(r, L, role);
   return L;
 }
-
-// 대상 (김정은) 외형
-export function targetLook() {
-  return {
-    skin: 0, female: false, age: 42, hair: 'kju', hairCol: '#0f0f14', fw: 16, fh: 15, chin: 0.28,
-    eyes: 'narrow', brows: 'thin', mouth: 'small', nose: 'wide', glasses: null, beard: null, mole: null, blush: false,
-    hat: null, top: 'mao', topCol: '#26282e', top2: null, bottomCol: '#1d1f24', shoeCol: '#0c0c10',
-    stocky: true, pin: false, notebook: false, earpiece: false, backpack: false, medals: false, camera: false, doubleChin: true, skirt: false,
-  };
+// 1945년: 코트·정장·페도라·스카프, 회녹색 군복, 검은 제복 경호대
+function era1945(r, L, role) {
+  Object.assign(L, { backpack: false, camera: false, earpiece: false, glasses: L.glasses === 'sun' ? null : L.glasses });
+  if (L.hair === 'curly') L.hair = 'short';
+  if (role === 'civ' || role === 'worker') {
+    L.hat = null;
+    if (L.female) { L.top = pick(r, ['dress', 'coat', 'dress']); L.topCol = pick(r, [...OLD, '#7a4a4a', '#4a5a7a']); L.skirt = true; L.top2 = pick(r, OLD); if (chance(r, 0.35)) { L.hat = 'scarf'; L.hatCol = pick(r, ['#8a3a3a', '#3a4a6a', '#6a6a4a', '#e0d8c0']); } }
+    else { L.top = pick(r, ['coat', 'suit', 'jacket', 'coat']); L.topCol = pick(r, OLD); L.tie = '#2a2a2a'; if (chance(r, 0.45)) { L.hat = 'fedora'; L.hatCol = pick(r, ['#2a2a2a', '#4a4036', '#3a3a40', '#5a5048']); } }
+    L.bottomCol = pick(r, ['#2a2a2a', '#3a3630', '#4a4038']);
+  }
+  if (role === 'soldier') Object.assign(L, { top: 'uniform', topCol: '#5d6450', bottomCol: '#5d6450', hat: chance(r, 0.6) ? 'helmet' : 'milcap', hatCol: '#4a5040', band: '#4a5040', female: false, hair: 'short' });
+  if (role === 'guard') Object.assign(L, { female: false, top: 'uniform', topCol: '#26262a', bottomCol: '#26262a', shoeCol: '#0c0c0e', hat: 'milcap', hatCol: '#222226', band: '#2e2e32', hair: 'short', hairCol: HAIRC.dark, stocky: chance(r, 0.5), beard: null, skirt: false, glasses: null });
+  if (role === 'official') Object.assign(L, { top: 'uniform', topCol: '#6a6e5c', bottomCol: '#5a5e4e', hat: 'milcap', hatCol: '#6a6e5c', band: '#3e4a3a', medals: true, pin: false });
 }
+
 // 대역 (닮은 사람): 대상 외형에서 1~2가지 차이
-export function doubleLook(r) {
-  const L = targetLook();
+export function doubleLook(r, base) {
+  const L = { ...base };
   const vars = [
-    () => { L.fw = 14; L.doubleChin = false; },
+    () => { L.fw = Math.max(12, L.fw - 2); L.doubleChin = false; },
     () => { L.glasses = 'glasses'; },
     () => { L.mole = [14, 17]; },
-    () => { L.eyes = 'normal'; L.brows = 'thick'; },
-    () => { L.skin = 2; },
-    () => { L.topCol = '#3d4048'; L.pin = true; },
-    () => { L.fh = 16; L.chin = 0.55; },
-    () => { L.mouth = 'smile'; L.age = 38; },
+    () => { L.eyes = L.eyes === 'normal' ? 'big' : 'normal'; L.brows = 'thick'; },
+    () => { L.skin = L.skin === 2 ? 1 : 2; },
+    () => { L.topCol = shade(L.topCol, 1.35); },
+    () => { L.fh = L.fh >= 16 ? 14 : 16; L.chin = L.chin > 0.45 ? 0.3 : 0.6; },
+    () => { L.mouth = L.mouth === 'smile' ? 'neutral' : 'smile'; },
   ];
   const picks = [];
   while (picks.length < 2) { const v = pick(r, vars); if (!picks.includes(v)) picks.push(v); }
   picks.forEach((f) => f());
   return L;
 }
+// 교도소용 줄무늬 죄수복
+export function prisonLook(base) {
+  return { ...base, top: 'stripes', topCol: '#e8e8e8', bottomCol: '#e8e8e8', shoeCol: '#2a2a2a', tie: null, pin: false, medals: false, notebook: false, hat: null, earpiece: false, glasses: base.glasses === 'sun' ? null : base.glasses };
+}
 
 // ───────────────────────── 신상 카드 ─────────────────────────
-export function genInfo(r, L, { group, role, nk, countryKo, nationalityKo }) {
+const OLD_JOBS = ['공장 노동자', '농부', '교사', '주부', '간호사', '우편배달부', '제빵사', '재단사', '철도원', '학생', '상인', '국민돌격대원'];
+export function genInfo(r, L, { group, role, nk, countryKo, nationalityKo, era = 2026 }) {
   const g = role === 'tourist' ? group : nk ? 'nk' : group;
   const name = makeName(r, g, L.female);
   let job = pick(r, JOBS);
@@ -219,18 +233,18 @@ export function genInfo(r, L, { group, role, nk, countryKo, nationalityKo }) {
   if (role === 'official') job = nk ? pick(r, NK_OFFICIAL) : pick(r, ['정부 관료', '외교관', '의전 담당관']);
   if (role === 'worker') job = nk ? '공장 노동자' : '현장 근로자';
   if (role === 'skier') job = pick(r, ['스키 강사', '관광객', '대학생']);
+  if (L.age >= 30 && /학생/.test(job)) job = pick(r, nk ? ['공장 노동자', '협동농장원', '교원'] : ['회사원', '자영업자', '교사', '공무원']);
+  if (L.age >= 66 && !['guard', 'soldier', 'official'].includes(role) && role !== 'tourist' && chance(r, 0.6)) job = '은퇴자';
+  if (L.age < 23 && job === '은퇴자') job = '대학생';
+  if (era === 1945) {
+    job = { guard: '총통 경호대원', soldier: '독일 국방군 병사', official: pick(r, ['국방군 장교', '나치당 간부', '참모 장교']) }[role] || pick(r, OLD_JOBS);
+  }
   const h = L.female ? 152 + Math.floor(r() * 18) : 162 + Math.floor(r() * 22);
   return {
-    name, age: L.age, birth: birthInfo(r, L.age), birthplace: pick(r, BIRTHPLACE[g] || BIRTHPLACE.en),
+    name, age: L.age, birth: birthInfo(r, L.age, era === 1945 ? 1945 : GAME_YEAR), birthplace: pick(r, BIRTHPLACE[g] || BIRTHPLACE.en),
     nationality: nationalityKo || countryKo, job, note: `신장 ${h}cm · 혈액형 ${pick(r, BLOOD)}형`,
   };
 }
-export const TARGET_INFO = {
-  name: '김정은', age: 42, birth: '1984년 1월 8일 (공식)', birthplace: '평양',
-  nationality: '조선민주주의인민공화국', job: '조선노동당 총비서 · 국무위원장',
-  note: "신장 약 170cm · 투블럭('패기머리') · 인민복",
-};
-
 // ───────────────────────── 스프라이트 ─────────────────────────
 // 저해상도 인물: 9x18. 머리 0~5행, 몸통 6~11, 다리 12~16, 신발 17
 function grid(w, h) { return { w, h, d: new Array(w * h).fill(null) }; }
@@ -302,11 +316,13 @@ function bodyLow(L, frame) {
   if (L.top === 'uniform') { fillR(g, tl, 10, tr, 10, '#5a3a20'); gset(g, 4, 10, '#d0b040'); gset(g, tl, 6, '#b8302a'); gset(g, tr, 6, '#b8302a'); }
   if (L.top === 'overall') { gset(g, 3, 6, '#e8e8e8'); gset(g, 5, 6, '#e8e8e8'); gset(g, 4, 6, '#e8e8e8'); }
   if (L.top === 'jacket') { for (let y = 6; y <= 11; y++) gset(g, 4, y, topD); }
-  if (L.pin) gset(g, 3, 7, '#e02a2a');
+  if (L.pin) gset(g, 3, 7, (L.pinCol || ['#e02a2a'])[0]);
   if (L.medals) { gset(g, 5, 7, '#e8c040'); gset(g, 6, 7, '#e02a2a'); gset(g, 5, 8, '#3a8ae0'); }
   if (L.backpack) { gset(g, 3, 6, '#3a2a1a'); gset(g, 3, 7, '#3a2a1a'); gset(g, 5, 6, '#3a2a1a'); gset(g, 5, 7, '#3a2a1a'); }
   if (L.camera) { gset(g, 4, 8, '#1a1a1a'); gset(g, 4, 9, '#1a1a1a'); }
   if (L.notebook) { gset(g, ar, armEnd, '#f4f4f0'); gset(g, ar + 1, armEnd, '#f4f4f0'); gset(g, ar + 1, armEnd + 1, '#d8d8d0'); }
+  if (L.top === 'stripes') for (let y = 6; y <= 16; y += 2) for (let x = 0; x < 9; x++) if (gget(g, x, y) === L.topCol) gset(g, x, y, '#26262c');
+  if (L.top === 'suit' && L.tie) { gset(g, 4, 9, L.tie); }
   return gcanvas(g);
 }
 
@@ -328,6 +344,8 @@ function headLow(L) {
     case 'ponytail': fillR(g, 3, 0, 5, 0, hc); fillR(g, 2, 1, 6, 1, hc); for (let y = 1; y <= 5; y++) gset(g, 7, y, hd); break;
     case 'bun': fillR(g, 3, 0, 5, 0, hc); fillR(g, 2, 1, 6, 1, hc); gset(g, 4, 0, hd); break;
     case 'bald': gset(g, 2, 2, hc); gset(g, 6, 2, hc); break;
+    case 'trump': fillR(g, 2, 0, 6, 0, hc); fillR(g, 1, 1, 7, 1, hc); fillR(g, 1, 2, 4, 2, hc); gset(g, 7, 2, hd); gset(g, 4, 0, shade(hc, 1.2)); break;
+    case 'hitler': fillR(g, 3, 0, 5, 0, hc); fillR(g, 2, 1, 6, 1, hc); fillR(g, 2, 2, 3, 2, hc); gset(g, 6, 2, hd); break;
   }
   const hat = L.hatCol, hatD = hat ? shade(hat, 0.7) : null;
   switch (L.hat) {
@@ -336,11 +354,14 @@ function headLow(L) {
     case 'beanie': fillR(g, 3, 0, 5, 0, hat); fillR(g, 2, 1, 6, 1, hatD); break;
     case 'hardhat': fillR(g, 3, 0, 5, 0, hat); fillR(g, 1, 1, 7, 1, hat); break;
     case 'ushanka': fillR(g, 2, 0, 6, 0, hat); fillR(g, 1, 1, 7, 1, hat); for (let y = 2; y <= 4; y++) { gset(g, 1, y, hatD); gset(g, 7, y, hatD); } break;
+    case 'fedora': fillR(g, 2, 0, 6, 0, hat); fillR(g, 1, 1, 7, 1, hatD); break;
+    case 'helmet': fillR(g, 2, 0, 6, 0, hat); fillR(g, 1, 1, 7, 1, hat); gset(g, 1, 2, hatD); gset(g, 7, 2, hatD); break;
+    case 'scarf': fillR(g, 3, 0, 5, 0, hat); fillR(g, 2, 1, 6, 1, hat); for (let y = 2; y <= 5; y++) { gset(g, 1, y, hatD); gset(g, 7, y, hatD); } break;
   }
   if (L.glasses === 'sun') fillR(g, 3, 3, 5, 3, '#0e0e14');
   else if (L.glasses) { gset(g, 3, 3, '#6f86a0'); gset(g, 5, 3, '#6f86a0'); }
   if (L.beard === 'beard') fillR(g, 3, 5, 5, 5, hc);
-  if (L.beard === 'mustache') gset(g, 4, 4, hc);
+  if (L.beard === 'mustache' || L.beard === 'toothbrush') gset(g, 4, 4, hc);
   return gcanvas(g);
 }
 
@@ -388,6 +409,7 @@ export function headHi(L) {
     }
   };
   collar();
+  if (L.top === 'stripes') for (let y = 20; y <= 23; y++) for (let x = 0; x < 20; x++) if (get(x, y) === top && y % 2 === 0) set(x, y, '#26262c');
 
   // 얼굴 마스크
   const mask = new Set();
@@ -450,6 +472,7 @@ export function headHi(L) {
   if (L.mole) set(L.mole[0], L.mole[1], '#4a3020');
   // 수염
   if (L.beard === 'mustache' || L.beard === 'beard') for (let x = cx - 2; x <= cx + 1; x++) set(x, my - 1, hc);
+  if (L.beard === 'toothbrush') { for (let y = ey + 3; y <= my - 1; y++) { set(cx - 1, y, hc); set(cx, y, hc); } }
   if (L.beard === 'beard' || L.beard === 'stubble') {
     for (let y = my - 1; y <= chinY; y++) for (let x = 0; x < 20; x++) {
       if (!inM(x, y) || (y === my && x >= cx - 2 && x <= cx + 1)) continue;
@@ -522,6 +545,27 @@ export function headHi(L) {
       for (let y = y0 - 7; y <= y0 - 3; y++) for (let x = cx - 3; x <= cx + 2; x++) if ((x - cx + 0.5) ** 2 + (y - (y0 - 5)) ** 2 <= 7) set(x, y, x > cx ? hd : hc);
       break;
     case 'bald': sides(y0 + 3, ey - 1, hw0 - 1.2, hw0 + 0.6, hc); set(cx - 2, y0 + 1, S[0 + 0]); set(cx - 3, y0 + 2, '#ffffff'); break;
+    case 'trump': {
+      // 풍성하게 뒤로 넘긴 금발 + 이마 위 스윕
+      dome(y0 - 5, y0 + 2, hw0 + 1.8, hc, hd);
+      sides(y0 + 2, ey - 1, hw0 - 1.6, hw0 + 1.6, hc);
+      const L0 = Math.round(cx - hw0) - 1;
+      for (let x = L0; x <= cx + 3; x++) set(x, y0 + 3, hc);
+      for (let x = L0 + 1; x <= cx - 1; x++) set(x, y0 + 4, hd);
+      for (let x = cx - 4; x <= cx + 2; x++) set(x, y0 - 4, hl);
+      for (let x = cx - 2; x <= cx + 4; x++) set(x, y0 - 1, hl);
+      set(cx - 5, y0 + 1, hl); set(cx - 4, y0 + 2, hl);
+      break;
+    }
+    case 'hitler': {
+      // 짧은 옆머리 + 이마로 비스듬히 내린 앞머리
+      dome(y0 - 3, y0 + 1, hw0 + 0.6, hc, hd);
+      sides(y0 + 2, ey - 2, hw0 - 1.2, hw0 + 0.8, hc);
+      const L0 = Math.round(cx - hw0);
+      for (let k = 0; k < 4; k++) for (let x = L0; x <= cx + 2 - k * 3; x++) set(x, y0 + 2 + k, k === 3 ? hd : hc);
+      set(cx + 1, y0 - 2, hl); set(cx + 2, y0 - 2, hl);
+      break;
+    }
   }
   // 모자
   const hat = L.hatCol;
@@ -530,13 +574,26 @@ export function headHi(L) {
     switch (L.hat) {
       case 'milcap':
         for (let y = y0 - 5; y <= y0 - 1; y++) { const hw = y === y0 - 5 ? hw0 + 1.5 : hw0 + 2.5; for (let x = 0; x < 20; x++) { const d = Math.abs(x + 0.5 - cx); if (d <= hw) set(x, y, y === y0 - 5 ? hatL : x > cx + 3 ? hatD : hat); } }
-        for (let x = 0; x < 20; x++) { const d = Math.abs(x + 0.5 - cx); if (d <= hw0 + 0.5) set(x, y0, '#b8302a'); if (d <= hw0 - 1) set(x, y0 + 1, '#15151a'); if (d <= hw0 - 0.5 && inM(x, y0 + 2)) set(x, y0 + 2, S[2]); }
+        for (let x = 0; x < 20; x++) { const d = Math.abs(x + 0.5 - cx); if (d <= hw0 + 0.5) set(x, y0, L.band || '#b8302a'); if (d <= hw0 - 1) set(x, y0 + 1, '#15151a'); if (d <= hw0 - 0.5 && inM(x, y0 + 2)) set(x, y0 + 2, S[2]); }
         set(cx - 1, y0 - 1, '#e8c040'); set(cx, y0 - 1, '#e8c040'); set(cx - 1, y0, '#e8c040'); set(cx, y0, '#e8c040');
         break;
       case 'cap': dome(y0 - 3, y0 + 1, hw0 + 1, hat, hatD); for (let x = Math.round(cx - hw0) - 1; x <= cx + hw0; x++) set(x, y0 + 2, hatD); break;
       case 'beanie': dome(y0 - 4, y0 + 2, hw0 + 1.5, hat, hatD); for (let x = 0; x < 20; x++) if (Math.abs(x + 0.5 - cx) <= hw0 + 1.5) { set(x, y0 + 1, hatD); set(x, y0 + 2, hatD); } set(cx - 1, y0 - 5, '#f4f4f4'); set(cx, y0 - 5, '#f4f4f4'); break;
       case 'hardhat': dome(y0 - 4, y0 + 1, hw0 + 1, hat, hatD); for (let x = 0; x < 20; x++) if (Math.abs(x + 0.5 - cx) <= hw0 + 2.5) set(x, y0 + 2, hatD); set(cx - 3, y0 - 3, hatL); break;
       case 'ushanka': dome(y0 - 4, y0 + 2, hw0 + 2, hat, hatD); sides(y0 + 2, ey + 3, hw0 - 0.5, hw0 + 2, hat); for (let x = 0; x < 20; x += 2) set(x, y0 + 2, hatL); break;
+      case 'fedora':
+        for (let y = y0 - 4; y <= y0; y++) for (let x = 0; x < 20; x++) { const d = Math.abs(x + 0.5 - cx); if (d <= hw0 - (y === y0 - 4 ? 1.5 : 0.5) && !(y === y0 - 4 && d < 1.5)) set(x, y, y === y0 ? '#161616' : x > cx + 2 ? hatD : hat); }
+        for (let x = 0; x < 20; x++) if (Math.abs(x + 0.5 - cx) <= hw0 + 3) set(x, y0 + 1, hatD);
+        break;
+      case 'helmet':
+        dome(y0 - 5, y0 + 1, hw0 + 2, hat, hatD);
+        for (let x = 0; x < 20; x++) if (Math.abs(x + 0.5 - cx) <= hw0 + 3) set(x, y0 + 2, hatD);
+        set(cx - 3, y0 - 3, hatL); set(cx - 2, y0 - 4, hatL);
+        break;
+      case 'scarf':
+        dome(y0 - 3, y0 + 2, hw0 + 1.5, hat, hatD); sides(y0 + 2, chinY, hw0 - 1, hw0 + 1.6, hat);
+        set(cx - 1, chinY + 1, hatD); set(cx, chinY + 1, hatD);
+        break;
     }
   }
   // 안경
@@ -572,7 +629,8 @@ export function bust(L, bg = '#223') {
   if (L.top === 'hanbok') { for (let y = 26; y < 32; y++) { P(12 + (y - 26), y, '#ffffff'); P(19 - (y - 26), y, '#ffffff'); } P(15, 29, '#c8303a'); P(16, 29, '#c8303a'); P(15, 30, '#c8303a'); }
   if (L.top === 'jacket' || L.top === 'coat') { for (let y = 26; y < 32; y++) P(15, y, topD); }
   if (L.top === 'overall') { P(9, 26, '#2a4a7a'); P(9, 27, '#2a4a7a'); P(22, 26, '#2a4a7a'); P(22, 27, '#2a4a7a'); }
-  if (L.pin) { P(9, 28, '#e02a2a'); P(10, 28, '#e02a2a'); P(9, 29, '#e8c040'); P(10, 29, '#e02a2a'); }
+  if (L.pin) { const pc = L.pinCol || ['#e02a2a', '#e02a2a', '#e8c040', '#e02a2a']; P(9, 28, pc[0]); P(10, 28, pc[1]); P(9, 29, pc[2]); P(10, 29, pc[3]); }
+  if (L.top === 'stripes') for (let y = 26; y < 32; y += 2) for (let i = 2; i <= 29; i++) { const d = x.getImageData(i, y, 1, 1).data; if (d[0] > 150 && d[1] > 150) P(i, y, '#26262c'); }
   if (L.medals) { const mc = ['#e8c040', '#e02a2a', '#3a8ae0', '#e8c040', '#5ab65a']; mc.forEach((m, i) => { P(19 + (i % 3) * 2, 28 + Math.floor(i / 3) * 2, m); }); }
   if (L.backpack) { for (let y = 26; y < 32; y++) { P(8, y, '#3a2a1a'); P(23, y, '#3a2a1a'); } }
   x.drawImage(headHi(L), 2, -1);

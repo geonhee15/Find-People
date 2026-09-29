@@ -2,17 +2,21 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0d1a">
   <title>Find People</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
     <header id="hud">
-      <div class="hud-target"><canvas id="hudTarget" width="32" height="32"></canvas><div><div class="muted small">추적 대상</div><b>김정은</b></div></div>
+      <div class="hud-target"><canvas id="hudTarget" width="32" height="32"></canvas><div><div class="muted small">추적 대상</div><b id="hudTargetName">-</b></div></div>
       <div class="hud-clock"><div id="hudDate">-</div><div id="hudLeft" class="small">-</div></div>
       <div class="hud-alert"><div class="small">경계도 <span id="alertNum">0%</span></div><div class="bar"><div id="alertBar"></div></div></div>
       <div class="hud-loc" id="hudLoc">-</div>
+      <button id="muteBtn" class="mute" title="소리 켜기/끄기">🔊</button>
     </header>
     <main id="main">
       <div id="left">

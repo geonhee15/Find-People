@@ -1,12 +1,37 @@
 /* global d3 */
 // 픽셀 지구본: 매 프레임 원판 픽셀을 역투영해 국가 ID 래스터를 샘플링
-import { W, H, hex2rgb, bayer, mulberry32, clamp } from './util.js';
+import { W, H, hex2rgb, bayer, mulberry32, clamp, makeCanvas } from './util.js';
 import { geo, CONT_KO } from './geo.js';
 import { ICON } from './art.js';
 
 const CONT_LABELS = [
   ['Asia', 95, 48], ['Europe', 15, 52], ['Africa', 20, 5], ['North America', -100, 45], ['South America', -60, -15], ['Oceania', 134, -25], ['Antarctica', 0, -80],
 ];
+// 비행기 아이콘을 32방향으로 미리 회전 (최근접 샘플링이라 픽셀이 뭉개지지 않음)
+const PLANE_DIRS = 32;
+let planeRot = null;
+function rotatedPlanes() {
+  if (planeRot) return planeRot;
+  const src = ICON.plane, sx = src.getContext('2d').getImageData(0, 0, 16, 16).data;
+  planeRot = [];
+  for (let k = 0; k < PLANE_DIRS; k++) {
+    const a = (k / PLANE_DIRS) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+    const [c, x] = makeCanvas(24, 24);
+    const img = x.createImageData(24, 24);
+    for (let y = 0; y < 24; y++) for (let X = 0; X < 24; X++) {
+      const dx = X + 0.5 - 12, dy = y + 0.5 - 12;
+      const u = Math.floor(dx * ca + dy * sa + 8), v = Math.floor(-dx * sa + dy * ca + 8);
+      if (u < 0 || v < 0 || u > 15 || v > 15) continue;
+      const i = (v * 16 + u) * 4, j = (y * 24 + X) * 4;
+      if (sx[i + 3] < 128) continue;
+      img.data[j] = sx[i]; img.data[j + 1] = sx[i + 1]; img.data[j + 2] = sx[i + 2]; img.data[j + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    planeRot.push(c);
+  }
+  return planeRot;
+}
+
 const OCEAN = ['#1d3f78', '#24509a', '#2d62b4', '#3a78c8'];
 const OCEAN_RGB = OCEAN.map(hex2rgb);
 
@@ -154,7 +179,16 @@ export class GlobeView {
         const [ax, ay, z] = this.project(ll[0], ll[1]);
         if (z > 0 && i % 2 === 0) { ctx.fillStyle = i / 40 < f.t ? '#ffd24a' : '#ffffff'; ctx.fillRect(Math.round(ax), Math.round(ay - 4 * Math.sin((i / 40) * Math.PI)), 1, 1); }
       }
-      ctx.drawImage(ICON.plane, Math.round(px - 8), Math.round(py - 8 - 4 * Math.sin(f.t * Math.PI)));
+      // 진행 방향: 조금 앞 지점과의 화면상 벡터
+      const ahead = f.interp(Math.min(1, f.t + 0.02)), behind = f.interp(Math.max(0, f.t - 0.02));
+      const [ax, ay] = this.project(ahead[0], ahead[1]), [bx, by] = this.project(behind[0], behind[1]);
+      let ang = Math.atan2(ax - bx, -(ay - by));
+      if (Math.hypot(ax - bx, ay - by) < 0.01) ang = f.ang ?? 0;
+      f.ang = ang;
+      const k = ((Math.round((ang / (Math.PI * 2)) * PLANE_DIRS) % PLANE_DIRS) + PLANE_DIRS) % PLANE_DIRS;
+      const lift = 4 * Math.sin(f.t * Math.PI);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(Math.round(px - 5), Math.round(py + 4), 10, 2);
+      ctx.drawImage(rotatedPlanes()[k], Math.round(px - 12), Math.round(py - 12 - lift));
     }
   }
   overlay(o) {
@@ -196,4 +230,5 @@ export class GlobeView {
     if (c && c.name !== 'Antarctica') this.g.requestTravelCountry(c);
   }
   wheel(dy) { this.R = clamp(this.R * (dy > 0 ? 0.9 : 1.1), 80, 420); }
+  zoomBy(f) { this.R = clamp(this.R * f, 80, 420); }
 }

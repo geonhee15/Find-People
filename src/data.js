@@ -1,4 +1,4 @@
-// 정적 데이터: 나라별 장소(POI), 대상 후보 위치, 연락처
+// 정적 데이터: 나라별 장소(POI). 대상별 데이터는 targets.js
 // dx/dy: 지도 아이콘이 겹칠 때 화면 픽셀 보정
 
 export const COUNTRY_POIS = {
@@ -39,44 +39,38 @@ export const COUNTRY_POIS = {
   ],
   'United States of America': [
     { id: 'us_dc', name: '워싱턴 D.C. · 백악관', type: 'capital', lon: -77.036, lat: 38.897, scene: { kind: 'landmark', style: 'whitehouse' } },
-    { id: 'us_ny', name: '뉴욕 · 타임스스퀘어', type: 'city', lon: -73.985, lat: 40.758, dy: -8, scene: { kind: 'city', style: 'ny' } },
+    { id: 'us_ny', name: '뉴욕 · 타임스스퀘어', type: 'city', lon: -73.985, lat: 40.758, dy: -12, dx: -2, scene: { kind: 'city', style: 'ny' } },
+    { id: 'us_trumptower', name: '뉴욕 · 트럼프 타워', type: 'city', lon: -73.974, lat: 40.762, dx: 12, dy: 2, scene: { kind: 'city', style: 'trumptower' } },
+    { id: 'us_bedminster', name: '뉴저지 · 베드민스터 골프클럽', type: 'golf', lon: -74.67, lat: 40.66, dx: -12, dy: 10, scene: { kind: 'golf', style: 'nj' } },
+    { id: 'us_maralago', name: '팜비치 · 마러라고', type: 'beach', lon: -80.037, lat: 26.677, scene: { kind: 'resort' } },
     { id: 'us_canyon', name: '그랜드캐니언', type: 'mountain', lon: -112.11, lat: 36.1, scene: { kind: 'mountain', style: 'canyon' } },
   ],
   Vietnam: [
     { id: 'vn_hanoi', name: '하노이 · 호안끼엠', type: 'capital', lon: 105.85, lat: 21.03, scene: { kind: 'city', style: 'hanoi' } },
   ],
   France: [{ id: 'fr_paris', name: '파리 · 에펠탑', type: 'capital', lon: 2.29, lat: 48.86, scene: { kind: 'landmark', style: 'eiffel' } }],
-  'United Kingdom': [{ id: 'uk_london', name: '런던 · 빅벤', type: 'capital', lon: -0.12, lat: 51.5, scene: { kind: 'landmark', style: 'bigben' } }],
+  'United Kingdom': [
+    { id: 'uk_london', name: '런던 · 빅벤', type: 'capital', lon: -0.12, lat: 51.5, scene: { kind: 'landmark', style: 'bigben' } },
+    { id: 'uk_turnberry', name: '스코틀랜드 · 턴베리 골프장', type: 'golf', lon: -4.83, lat: 55.32, scene: { kind: 'golf', style: 'scotland' } },
+  ],
   Egypt: [{ id: 'eg_giza', name: '기자 · 피라미드', type: 'landmark', lon: 31.13, lat: 29.98, scene: { kind: 'landmark', style: 'pyramid' } }],
 };
 
-// 대상이 있을 수 있는 곳 (가중치 w). kw = SNS 검색에 걸리는 키워드
-export const SPOTS = [
-  { poi: 'nk_square', country: 'North Korea', foreign: false, area: '평양', dir: '수도 평양', transport: 'car', act: '열병식 준비 점검', station: '평양역', kw: ['평양', '김일성광장', '열병식', '교통통제'], w: 3 },
-  { poi: 'nk_wonsan', country: 'North Korea', foreign: false, area: '원산', dir: '동해안', transport: 'train', act: '해안 휴양지 휴식', station: '원산역', kw: ['원산', '갈마', '해변', '동해안', '1호열차'], w: 3 },
-  { poi: 'nk_masik', country: 'North Korea', foreign: false, area: '마식령', dir: '동해안', transport: 'car', act: '스키장 현지지도', station: '원산역', kw: ['마식령', '스키장', '현지지도', '동해안'], w: 1 },
-  { poi: 'nk_paektu', country: 'North Korea', foreign: false, area: '삼지연', dir: '북부 산악지대', transport: 'train', act: '백두산 등정', station: '삼지연역', kw: ['백두산', '삼지연', '천지', '1호열차'], w: 2 },
-  { poi: 'nk_myohyang', country: 'North Korea', foreign: false, area: '향산', dir: '북서부 내륙 산간', transport: 'car', act: '특각(별장) 휴식', station: '향산역', kw: ['묘향산', '향산', '특각'], w: 1 },
-  { poi: 'nk_hamhung', country: 'North Korea', foreign: false, area: '함흥', dir: '동해안 북부', transport: 'train', act: '비료공장 현지지도', station: '함흥역', kw: ['함흥', '흥남', '비료공장', '현지지도', '1호열차'], w: 2 },
-  { poi: 'nk_sohae', country: 'North Korea', foreign: false, area: '동창리', dir: '서해안', transport: 'car', act: '위성 발사 참관', station: '—', kw: ['동창리', '서해위성발사장', '위성발사', '미사일'], w: 2 },
-  { poi: 'nk_sinuiju', country: 'North Korea', foreign: false, area: '신의주', dir: '북서부 국경', transport: 'train', act: '수해 복구 현지지도', station: '신의주역', kw: ['신의주', '압록강', '수해', '1호열차', '현지지도'], w: 1 },
-  { poi: 'ru_vladi', country: 'Russia', foreign: true, area: '블라디보스토크', dir: '러시아 극동', transport: 'train', act: '북러 정상회담', station: '블라디보스토크역', border: '두만강 철교', kw: ['블라디보스토크', '루스키섬', '정상회담', '1호열차', '러시아'], w: 2 },
-  { poi: 'ru_vostochny', country: 'Russia', foreign: true, area: '보스토치니', dir: '러시아 극동 내륙', transport: 'train', act: '우주기지 시찰 및 회담', station: '치올콥스키역', border: '두만강 철교', kw: ['보스토치니', '우주기지', '러시아', '1호열차', '정상회담'], w: 1 },
-  { poi: 'ru_moscow', country: 'Russia', foreign: true, area: '모스크바', dir: '러시아 서부', transport: 'plane', act: '기념행사 참석', station: '브누코보 공항', kw: ['모스크바', '붉은광장', '참매1호', '러시아'], w: 1 },
-  { poi: 'cn_beijing', country: 'China', foreign: true, area: '베이징', dir: '중국 수도권', transport: 'train', act: '북중 정상회담', station: '베이징역', border: '압록강 철교(단둥)', kw: ['베이징', '천안문', '정상회담', '1호열차', '중국', '단둥'], w: 2 },
-];
-
-export const CONTACTS = [
-  { id: 'nis', name: '박 과장', org: '국정원 대북정보팀', rel: 0.9, busy: 0.1, clues: ['border', 'direction', 'capital'], look: { group: 'ko', role: 'civ', female: false, age: 47 } },
-  { id: 'osint', name: '노아 킴', org: '민간 위성영상 분석가', rel: 0.8, busy: 0.15, clues: ['transport', 'direction'], look: { group: 'en', role: 'civ', female: false, age: 31 } },
-  { id: 'journalist', name: '엘렌 추', org: '외신 베이징 특파원', rel: 0.7, busy: 0.25, clues: ['activity', 'border'], look: { group: 'zh', role: 'civ', female: true, age: 36 } },
-  { id: 'defector', name: '리성호', org: '탈북민 · 前 호위사령부 운전병', rel: 0.65, busy: 0.15, clues: ['favorites', 'transport'], look: { group: 'nk', role: 'civ', female: false, age: 52 } },
-  { id: 'diplomat', name: '한스 뮐러', org: '평양 주재 유럽 외교관', rel: 0.85, busy: 0.45, clues: ['capital', 'activity'], look: { group: 'de', role: 'civ', female: false, age: 58 } },
-];
-
-export const HACK_SYSTEMS = [
-  { id: 'cctv', name: '현지 교통 CCTV망', desc: '지금 있는 나라의 도로 CCTV에서 VIP 차량 행렬을 찾습니다.', diff: 1, repeat: true },
-  { id: 'rail', name: '북한 철도성 운행 DB', desc: '특별열차(1호 열차)의 최근 운행 기록을 빼냅니다.', diff: 2 },
-  { id: 'atc', name: '동북아 항공 관제 기록', desc: '전용기 "참매 1호"의 비행 계획을 조회합니다.', diff: 2 },
-  { id: 'guard', name: '호위사령부 암호 통신', desc: '1호 행사 작전구역 코드를 해독합니다. 실패 시 경계도 급상승.', diff: 3 },
-];
+// 1945년 시간여행 모드 전용 장소 (여기 없는 나라는 옛 도시 스타일로 자동 생성)
+export const COUNTRY_POIS_1945 = {
+  Germany: [
+    { id: 'de_bunker', name: '베를린 · 총통 관저 벙커', type: 'ruins', lon: 13.381, lat: 52.512, dx: 10, dy: 4, scene: { kind: 'ruins', style: 'bunker' } },
+    { id: 'de_gate', name: '베를린 · 브란덴부르크 문', type: 'landmark', lon: 13.377, lat: 52.516, dx: -10, dy: -6, scene: { kind: 'ruins', style: 'gate' } },
+    { id: 'de_berghof', name: '오버잘츠베르크 · 베르크호프', type: 'mountain', lon: 13.04, lat: 47.63, scene: { kind: 'mountain', style: 'alps' } },
+    { id: 'de_flensburg', name: '플렌스부르크 항구', type: 'harbor', lon: 9.43, lat: 54.79, scene: { kind: 'harbor', style: 'uboat' } },
+  ],
+  Austria: [{ id: 'at_braunau', name: '브라우나우암인', type: 'village', lon: 13.2, lat: 48.2, scene: { kind: 'village', style: 'old' } }],
+  Argentina: [
+    { id: 'ar_bariloche', name: '바릴로체 · 나우엘우아피 호수', type: 'mountain', lon: -71.3, lat: -41.13, scene: { kind: 'mountain', style: 'lake' } },
+    { id: 'ar_buenos45', name: '부에노스아이레스 항구', type: 'harbor', lon: -58.37, lat: -34.6, scene: { kind: 'harbor', style: 'port' } },
+  ],
+  'United Kingdom': [{ id: 'uk_london45', name: '런던 · 빅벤', type: 'capital', lon: -0.12, lat: 51.5, scene: { kind: 'landmark', style: 'bigben' } }],
+};
+export function poiListFor(country, era) {
+  return era === 1945 ? COUNTRY_POIS_1945[country] : COUNTRY_POIS[country];
+}

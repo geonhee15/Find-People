@@ -3,7 +3,7 @@
 import { W, H, makeCanvas, hex2rgb, rgb2hex, mix, shade, bayer, mulberry32, hashStr, clamp, pick, haversineKm } from './util.js';
 import { geo, rasterize, mainParts } from './geo.js';
 import { ICON } from './art.js';
-import { COUNTRY_POIS } from './data.js';
+import { poiListFor } from './data.js';
 import { POI_INDEX } from './story.js';
 
 // 주요 산맥/산 (경도, 위도, 크기)
@@ -144,6 +144,12 @@ export class CountryView {
       ctx.drawImage(ICON[p.type] || ICON.landmark, s[0] - 8, s[1] - 15 + bob);
       if (hov) { ctx.fillStyle = '#ffd24a'; ctx.fillRect(s[0] - 9, s[1] + 3, 18, 1); }
       if (loc.poi === p.id) ctx.drawImage(ICON.pin, s[0] - 5, s[1] - 30 - Math.round(Math.abs(Math.sin(this.t * 4)) * 2));
+      const lv = this.g.droneScans?.[p.id];
+      if (lv !== undefined) {
+        const cols = ['#5ad07a', '#f0d040', '#f08a2e', '#ff3a3a'];
+        ctx.fillStyle = '#101018'; ctx.fillRect(s[0] - 8, s[1] - 22, 16, 5);
+        for (let k = 0; k < 3; k++) { ctx.fillStyle = k < lv ? cols[lv] : '#3a3a48'; ctx.fillRect(s[0] - 7 + k * 5, s[1] - 21, 4, 3); }
+      }
     }
   }
   overlay(o) {
@@ -157,15 +163,18 @@ export class CountryView {
       if (this.ids[(p[1] | 0) * W + (p[0] | 0)] !== f.idx) continue;
       o.text(f.ko, p[0], p[1], { size: 9, align: 'center', color: 'rgba(230,230,210,0.75)', outline: '#1a1a14' });
     }
+    const small = this.g.S < 1.3;
     for (const p of this.pois) {
       const s = this.poiScreen(p);
-      if (!s) continue;
+      if (!s || (small && this.hover !== p && this.g.loc.poi !== p.id)) continue;
       o.text(p.name.split(' · ').pop(), s[0], s[1] + 12, { size: 9, align: 'center', color: this.hover === p ? '#ffd24a' : '#ffffff', outline: '#101010' });
     }
     const m = this.g.mouse;
     if (this.hover) {
       const here = this.g.loc.poi === this.hover.id;
-      o.tooltip(this.hover.name, m.x, m.y, here ? '현재 위치 · 클릭해서 들어가기' : `이동 약 ${this.g.poiTravelHours(this.hover).toFixed(1)}시간 · 클릭`);
+      const lv = this.g.droneScans?.[this.hover.id];
+      const sec = lv === undefined ? '' : ` · 경호 ${['없음', '낮음', '높음', '매우 높음'][lv]}`;
+      o.tooltip(this.hover.name, m.x, m.y, (here ? '현재 위치 · 눌러서 들어가기' : `이동 약 ${this.g.poiTravelHours(this.hover).toFixed(1)}시간`) + sec);
     } else if (this.hoverCountry && this.hoverCountry !== this.c) {
       o.tooltip(this.hoverCountry.ko, m.x, m.y, '클릭: 이 나라로 이동');
     }
@@ -195,13 +204,15 @@ export class CountryView {
 }
 
 // 데이터가 없는 나라는 수도 + 무작위 지형 POI 자동 생성
-export function generatePois(country, view) {
-  if (COUNTRY_POIS[country.name]) return COUNTRY_POIS[country.name].map((p) => POI_INDEX[p.id]);
-  const r = mulberry32(hashStr('poi:' + country.name));
+export function generatePois(country, view, era = 2026) {
+  const fixed = poiListFor(country.name, era);
+  if (fixed) return fixed.map((p) => POI_INDEX[p.id]);
+  const sfx = era === 1945 ? '_45' : '';
+  const r = mulberry32(hashStr('poi:' + country.name + sfx));
   const out = [];
   const cap = country.capital || { name: country.ko + ' 도심', lon: country.centroid[0], lat: country.centroid[1] };
   const push = (p) => { const q = { ...p, country: country.name }; POI_INDEX[q.id] = q; out.push(q); };
-  push({ id: country.name + '_cap', name: `${country.ko} · ${cap.name}`, type: 'capital', lon: cap.lon, lat: cap.lat, scene: { kind: 'city', style: 'generic' } });
+  push({ id: country.name + '_cap' + sfx, name: `${country.ko} · ${cap.name}`, type: 'capital', lon: cap.lon, lat: cap.lat, scene: { kind: 'city', style: era === 1945 ? 'old' : 'generic' } });
   const own = [];
   for (let i = 0; i < 4000; i++) {
     const x = 20 + Math.floor(r() * (W - 40)), y = 30 + Math.floor(r() * (H - 50));
@@ -218,7 +229,7 @@ export function generatePois(country, view) {
     const kind = coast ? 'beach' : pick(r, ['village', 'mountain']);
     const [lon, lat] = view.proj.invert([x, y]);
     const nm = { beach: '해안', village: '시골 마을', mountain: '산악 지대' }[kind];
-    push({ id: `${country.name}_${chosen.length}`, name: `${country.ko} · ${nm}`, type: kind, lon, lat, scene: { kind, style: kind === 'mountain' ? 'green' : 'generic' } });
+    push({ id: `${country.name}_${chosen.length}${sfx}`, name: `${country.ko} · ${nm}`, type: kind, lon, lat, scene: { kind, style: kind === 'mountain' ? 'green' : 'generic' } });
   }
   return out;
 }
